@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:module-logging="http://www.mulesoft.org/schema/mule/module-logging" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/module-logging http://www.mulesoft.org/schema/mule/module-logging/current/mule-module-logging.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+		
+	<sub-flow name="create-order-main" doc:id="9600acdd-6410-4a88-b43d-000679eb2985" >
+		<choice doc:name="Choice" doc:id="0d76fdf2-5f00-4590-84b1-fa9208569852" >
+			<when expression='#[vars.warehouse == "BARRETT"]'>
+				<flow-ref doc:name="refer to create-order-to-barrett" doc:id="8dab42c0-9ece-4972-8287-e1f099bf6ccf" name="create-order-to-barrett"/>
+			</when>
+			<when expression='#[vars.warehouse == "TIGERS"]'>
+				<flow-ref doc:name="refer to create-order-to-tigers" doc:id="e797c371-05ff-49a5-b060-f649395aa1d5" name="create-order-to-tigers"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Invalid warehouse" doc:id="5afbec8f-3757-4b39-88f8-1628c4919ff8" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "invalid warehouse"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="Invalid warehouse" doc:id="eca9213d-166d-46eb-8786-2a9529ee0285" config-ref="JSON_Logger_Config" message="Invalid warehouse">
+					<json-logger:content ><![CDATA[#[payload]]]></json-logger:content>
+				</json-logger:logger>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="create-order-to-barrett" doc:id="c476fa49-ec09-4035-8e35-d6aa937071d1" >
+		<ee:transform doc:name="context variables" doc:id="398a5b01-fea9-4487-8a0d-24dc0176d534" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="3plRequest" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	path: vars.path,
+	method: "POST",
+	headers: {
+		"x-barrett-custom-api-token": Mule::p("secure::barrett.apiToken")
+	},
+	host: Mule::p('barrett.https.request.host'),
+	basePath: Mule::p('barrett.https.request.basePath')
+	
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="refer to common-request-component" doc:id="424f5dd2-8af0-4c02-ba6c-f538b17b6518" name="common-request-component" />
+	</sub-flow>
+	<sub-flow name="create-order-to-tigers" doc:id="b696a18e-b0e4-45c4-9a22-6f32368bf375" >
+		<ee:transform doc:name="context variables" doc:id="e2d907e1-d63c-4cc6-ab66-08baad57f42c">
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"interfaceId": Mule::p('tigers.https.request.username'),
+    "syncValidate": true, 
+    "orders": payload,
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="3plRequest" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	path: vars.path,
+	method: "POST",
+	headers: {
+		"Authorization": "Bearer $(Mule::p("secure::tigers.salesOrder.apiToken"))"
+	},
+	host: Mule::p('tigers.https.request.host'),
+	basePath: Mule::p('tigers.https.request.basePath')
+	
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="refer to common-request-component" doc:id="90c55f7a-0aac-44c3-b3d3-5f5ba85dc43b" name="common-request-component" />
+	</sub-flow>
+	
+</mule>

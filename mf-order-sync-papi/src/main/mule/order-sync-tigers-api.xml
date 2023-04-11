@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	
+	
+	
+	<sub-flow name="order-sync-tigers-main" doc:id="0b9aabcd-f6ca-41fd-914c-0f30550f882b">
+		
+		<json-logger:logger doc:name="LoggerSyncing Sage Orders to Tigers" doc:id="007b4bd4-40b1-427b-be75-165576e69fa9" config-ref="JSON_Logger_Config" message="Syncing Sage Orders to Tigers" />
+		<ee:transform doc:name="sage-rest-sapi-request-variables" doc:id="65441e4b-4b12-479f-a3ed-79c4c8369659" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="sageRest" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	
+	path: Mule::p('https.sage.sapi.rest.path'),
+	method: "GET",
+	queryParams: {
+		 "criteria": Mule::p('https.sage.sapi.rest.params.tigers.criteria'),
+          "count": Mule::p('https.sage.sapi.rest.params.tigers.count'),
+          "representation": Mule::p('https.sage.sapi.rest.params.tigers.representation') 
+        
+	}
+	
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="sage-sapi-call-for-all-orders" doc:id="87ce91c1-36ba-4ce0-ac0d-fe624e831395" name="send-sage-request-flow"/>
+				<choice doc:name="Choice" doc:id="fe175c27-c3a3-4579-a440-91dbdd5f3844" >
+			<when expression='#[!isEmpty(payload."\$resources")]'>
+				<ee:transform doc:name="extract-orderId-from-order-list" doc:id="938428b4-c7dc-4231-95c8-90722eba2185">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+
+payload."\$resources".SOHNUM
+]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="geoComponent"><![CDATA[%dw 2.0
+output application/csv
+---
+//readUrl("classpath://geocomponents/dev-geocomponents.csv","application/csv")
+(readUrl(Mule::p('geoComponent.path'),"application/csv")) ]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<flow-ref doc:name="refer to process-order-sync-tigers" doc:id="2301858e-5a24-45f4-824b-7a1257b7a984" name="process-order-sync-tigers" />
+				<json-logger:logger doc:name="Finished syncing Sage Orders to Tigers" doc:id="ebab4915-2238-43cc-a5b3-525228f12d07" config-ref="JSON_Logger_Config" message="Finished syncing Sage Orders to Tigers">
+					<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: ""
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="No orders present to sync in tigers" doc:id="0aa95c2c-c8a4-4533-bdb0-3a6cafdb9a95" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "No orders present to sync in tigers"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="process-order-sync-tigers" doc:id="0c436390-af35-4e9a-9a0e-111c56f55e56">
+		<try doc:name="Try" doc:id="0b3759a4-cd14-4b9c-9f09-83faf17fdb13" >
+			<foreach doc:name="For Each" doc:id="cccd52d7-492b-4609-851e-80266bcfea6f" collection="#[payload]">
+			<set-variable value="#[payload]" doc:name="set-order-id" doc:id="17438783-1b02-4b50-ab37-148ba1541bb1" variableName="orderId" />
+			<ee:transform doc:name="set-variables-sage-soap-sapi-call" doc:id="9a64a64e-b2ea-43cb-8c00-3669ad6ead2e">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="sageRest"><![CDATA[%dw 2.0
+output application/json
+---
+{
+	
+	path: Mule::p('https.sage.sapi.soap.path'),
+	method: "GET",
+	queryParams:{
+				
+		"recordType": Mule::p('https.sage.sapi.soap.params.recordType'),
+        "sageObjectKey": Mule::p('https.sage.sapi.soap.params.sageObjectKey'),
+	},
+	uriParams:
+	{
+		"orderId": payload,
+	}
+	
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<flow-ref doc:name="sage-sapi-call-for-single-order" doc:id="da113738-225f-4681-985b-0f2bb8e17b3a" name="send-sage-request-flow" />
+			<choice doc:name="Choice" doc:id="461789e7-8cf4-4d42-a95a-784da8b21147" >
+					<when expression="#[!isEmpty(payload.Envelope.Body.readResponse.readReturn.resultXml)]">
+						<ee:transform doc:name="convert-order-xml-json" doc:id="78246bc5-9202-4a95-9d7f-f3588590ee76">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+read(payload.Envelope.Body.readResponse.readReturn.resultXml,"application/json")]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+						<ee:transform doc:name="tigers-sync-check" doc:id="699290e0-d4a7-4e27-8a53-7c42d55b0e13">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="sync_check"><![CDATA[%dw 2.0
+output application/json
+var tigers_sync_check_err = ""
+var tigers_sync_check_flg = false
+fun tigers_sync_check(payload) =
+    
+    if (
+        payload["SOH2_1"]["STOFCY"] == "BE"
+        and payload["SOH1_5"]["YMFSOS"] == "4"
+        and payload["SOH2_1"]["YRSDP"] == "1"
+        and payload["SOH1_5"]["ALLSTA"] == "3"
+    )
+     [ true,"Success"]
+    else
+        if (payload["SOH2_1"]["STOFCY"] != "EU")
+            [false,"Shipment Site STOFCY value has to be BE"]
+        else if (payload["SOH1_5"]["YMFSOS"] != "4")
+           [false, "Order stage YMFSOS should be equal to 4"]
+        else if (payload["SOH2_1"]["YRSDP"] != "1")
+            [false,"Non Standard Order YRSDP should be equal to 1"]
+        else if (payload["SOH1_5"]["ALLSTA"] != "3")
+            [false,"Allocation ALLSTA should be equal to 3"]
+        else
+        [tigers_sync_check_flg, tigers_sync_check_err]
+---
+ tigers_sync_check(payload)]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+						<flow-ref doc:name="refer to post-to-tigers" doc:id="5c6e4586-7a43-45be-b7b1-8e04054e220f" name="post-to-tigers" />
+					</when>
+					<otherwise>
+						<json-logger:logger doc:name="orer does not exist" doc:id="53eaefaa-93ee-4ebb-9528-ab9dcabfc04d" config-ref="JSON_Logger_Config" message='#["Order does not exist " ++ vars.orderId]'>
+							<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload.Envelope.Body.readResponse.readReturn.messages.message
+    
+    }]]]></json-logger:content>
+						</json-logger:logger>
+					</otherwise>
+				</choice>
+		</foreach>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="a4c7533e-676c-40e3-b411-3d789ab79e3d" >
+					<json-logger:logger doc:name="Issue syncing Sage order to Tigers." doc:id="3f6f03d0-cce5-4e76-a41d-b4190bd25adb" config-ref="JSON_Logger_Config" message='#["Issue syncing Sage order to Tigers. Order #$(vars.orderId)"]' />
+					<choice doc:name="Choice" doc:id="2a036c66-7da3-4e72-ba49-6cd0e53dacf8" >
+						<when expression='#[payload as String default "" contains "Failed to create Tigers Sales Order: $(vars.orderId): Duplicate. The Sales Order Reference $(vars.orderId) already exists"]'>
+							<ee:transform doc:name="set-variables-for-update-call" doc:id="bec150c8-a3c5-4fc4-8a4c-5d5d5ed98b33" >
+								<ee:message />
+								<ee:variables >
+									<ee:set-variable variableName="sageRest" ><![CDATA[%dw 2.0
+output application/json
+var released_to_warehouse_at = now() as DateTime
+---
+{
+	
+	path: Mule::p('https.sage.sapi.soap.path'),
+	method: "PUT",
+	queryParams:{
+		
+		"recordType": Mule::p('https.sage.sapi.soap.params.recordType'),
+        "sageObjectKey": Mule::p('https.sage.sapi.soap.params.sageObjectKey'),
+	},
+	uriParams:
+	{
+		"orderid": vars.orderId,
+	},
+	body: {"SOH1_5": {"YMFSOS": 13, "YRELWHSDATM": released_to_warehouse_at}}
+	
+}]]></ee:set-variable>
+								</ee:variables>
+							</ee:transform>
+							<try doc:name="Try" doc:id="72b832dc-12f7-4bd7-bd13-6111df28d3da" >
+								<flow-ref doc:name="update-sage-request" doc:id="896bfdbf-be66-4f28-8e33-3e583e691993" name="send-sage-request-flow" />
+								<error-handler >
+									<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="492edfef-c7f3-428c-a0b4-1e0ca2594442" >
+										<json-logger:logger doc:name="Failed to update Sage order status " doc:id="f7087fd8-6c61-40db-9c65-00842536e27b" config-ref="JSON_Logger_Config" message='#["Failed to update Sage order status : " ++ vars.orderId]' />
+									</on-error-continue>
+								</error-handler>
+							</try>
+						</when>
+					</choice>
+				</on-error-continue>
+			</error-handler>
+		</try>
+	</sub-flow>
+	<sub-flow name="post-to-tigers" doc:id="60461cbf-9c63-465b-a5d2-5cfc3949513f" >
+		<choice doc:name="Choice" doc:id="ed6cd63a-fadf-4e17-8197-f7990515b2d3">
+				<when expression="#[vars.sync_check[0]]">
+					<ee:transform doc:name="sage-to-tigers-format" doc:id="47c9f4e2-85c7-4fb6-bba7-f44b7c085d6a">
+						<ee:message>
+							<ee:set-payload resource="dwl/transform_sage_to_tigers.dwl" />
+						</ee:message>
+						<ee:variables>
+							<ee:set-variable variableName="fds"><![CDATA[%dw 2.0
+output application/json
+
+var sage_vat_id = ((payload["SOH1_7"]["YEECNUM"] as String replace " " with "") replace "-" with "")
+var sage_to_tigers_delivery_service = readUrl("classpath://mapping/sage_tigers_delivery_service.json", "application/json")
+
+fun format_tigers_address_line(tigers_address_line) =
+flatten(tigers_address_line scan ".{20}")[0]
+
+---
+{
+	salesOrderRef: payload["ADB2_1"]["CRY"],
+	consigneeRef: flatten(payload["SOH0_1"]["YAPON"] scan ".{20}")[0],
+	status: "NEW",
+	orderDate: payload["SOH0_1"]["ORDDAT"] as Date {
+			"format": "yyyyMMdd"
+		} as String {
+			"format": "yyyy/MM/dd"
+	},
+	currency: payload["SOH0_1"]["CUR"],
+	taxRegistrationNumber: upper(((payload["SOH1_7"]["YEECNUM"] as String replace " " with "") replace "-" with "")),
+	deliveryCharge: payload["SOH3_5"][0]["INVDTAAMT"],
+	shipDate: payload["SOH2_2"]["DEMDLVDAT"] as Date {
+			"format": "yyyyMMdd"
+		} as String {
+			"format": "yyyy/MM/dd"
+	},
+	specialInstructions: payload["SOH1_7"]["YORDADMNTE"],
+	categoryCode: "B2B",
+	deliveryCompany: payload["SOH2_3"]["BPTNUM"],
+	deliveryService: sage_to_tigers_delivery_service[payload["SOH2_3"]["MDL"]],
+	deliveryTerms: payload["SOH2_3"]["EECICT"],
+	paymentTerms: payload["SOH3_3"]["PTE"],
+	isResidential: if (payload["SOH2_2"]["DEMDLVDAT"] == "Residential") 1  else 0,
+	collectAccountNumber: payload["SOH2_1"]["YPSAN"],
+	addresses:[
+		{
+			addressType: "ST",
+			contactName: if(payload["SOH2_2"]["DEMDLVDAT"][1] != null) payload["SOH2_2"]["DEMDLVDAT"][1] else payload["ADB2_1"]["BPRNAM"][0],
+			companyName: payload["ADB2_1"]["BPRNAM"][0],
+			addressLine1: format_tigers_address_line(payload["ADB2_1"]["BPAADDLIG"][0] default ""),
+			addressLine2: format_tigers_address_line(payload["ADB2_1"]["BPAADDLIG"][1] default ""),
+			addressLine3: format_tigers_address_line(payload["ADB2_1"]["BPAADDLIG"][2] default ""),
+			city: payload["ADB2_1"]["CTY"],
+			state: payload["ADB2_1"]["SAT"],
+			postcode: payload["ADB2_1"]["POSCOD"],
+			countryCode: payload["ADB2_1"]["CRY"],
+			phoneNumber: "None",
+			faxNumber: payload["SOH1_6"]["YEORI"],
+			emailAddress: payload["SOH1_1"]["YEMAIL"]
+		},
+		{
+			addressType: "BY",
+			contactName: if(payload["ADB3_1"]["BPRNAM"][1] != null) payload["ADB3_1"]["BPRNAM"][1] else payload["ADB3_1"]["BPRNAM"][0],
+			companyName: payload["ADB3_1"]["BPRNAM"][0],
+			addressLine1: format_tigers_address_line(payload["ADB3_1"]["BPAADDLIG"][0] default ""),
+			addressLine2: format_tigers_address_line(payload["ADB3_1"]["BPAADDLIG"][1] default ""),
+			addressLine3: format_tigers_address_line(payload["ADB3_1"]["BPAADDLIG"][2] default ""),
+			city: payload["ADB3_1"]["CTY"],
+			state: payload["ADB3_1"]["SAT"],
+			postcode: payload["ADB3_1"]["POSCOD"],
+			countryCode: payload["ADB3_1"]["CRY"],
+			phoneNumber: payload["SOH1_1"]["YORDPHONE"],
+			emailAddress: ["SOH1_1"]["YEMAIL"]			
+		}
+		
+	],
+	orderLines: {}
+	
+}
+
+]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<ee:transform doc:name="context variables" doc:id="33a7c20c-5199-488c-9d2b-f43cebd4a89c">
+						<ee:message>
+						</ee:message>
+						<ee:variables>
+							<ee:set-variable variableName="tigers"><![CDATA[%dw 2.0
+output application/json
+---
+{
+	
+	path: Mule::p('https.3pl.sapi.path'),
+	method: "POST",
+	
+	queryParams:{
+		"path": Mule::p('https.3pl.sapi.params.tigers.path'),
+		"warehouse": "tigers"
+	}
+	
+}]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<try doc:name="Try" doc:id="f8f2005c-26ca-4069-9936-5152710155d2">
+							<flow-ref doc:name="3pl-sapi-call" doc:id="83b6acfa-b917-4f7c-a0da-aeed33c03133" name="send-3pl-request-flow" />
+							<error-handler>
+								<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="47314d4b-9fc5-46c6-90dd-9dcbb06675c5">
+									<ee:transform doc:name="Transform Message" doc:id="c1e3c6ed-7630-4003-9c96-cd9acda37f3c">
+										<ee:message>
+											<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+
+var err_info = payload["documents"][0]
+var order_num = err_info["reference"]
+var error_reason = err_info["errors"] joinBy  ". "
+---
+"Failed to create Tigers Sales Order: {$(order_num)}: {$(error_reason)}"]]></ee:set-payload>
+										</ee:message>
+									</ee:transform>
+									<json-logger:logger doc:name="order creation failed" doc:id="fe863c59-6b07-44ca-9552-ee48f38bbaac" config-ref="JSON_Logger_Config" message="order creation failed">
+										<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload
+}]]]></json-logger:content>
+									</json-logger:logger>
+								</on-error-propagate>
+							</error-handler>
+						</try>
+						<flow-ref doc:name="update-sage-flow" doc:id="4388f056-a21c-446d-b824-116bbe921349" name="update-sage-tigers-flow" />
+				</when>
+				<otherwise>
+					<json-logger:logger doc:name="error-sync-check" doc:id="545545e4-a748-43ce-a475-0c7ae9c5f1cf" config-ref="JSON_Logger_Config" message='#["Error in tigers sync check"]' tracePoint="EXCEPTION">
+						<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+	orderId: vars.orderId,
+	errorMessage: vars.sync_check[1]
+}]]]></json-logger:content>
+					</json-logger:logger>
+				</otherwise>
+			</choice>
+	</sub-flow>
+	<sub-flow name="update-sage-tigers-flow" doc:id="e98c20b6-2be1-4f3b-a0fe-d1b2f9927fa8" >
+		<ee:transform doc:name="check-sync-success" doc:id="f6168ae7-5dfb-4f82-a777-ff364a5b3345">
+					<ee:message>
+					</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="update_order" ><![CDATA[%dw 2.0
+output application/json
+fun sync_success(payload) =
+if(payload.totalSuccesses > 0)
+true
+else 
+false
+
+fun order_already_exists(payload)=
+if(payload.details[0].failureDetails.code[0] == "ORDERID_ALREADY_EXISTS")
+true
+else
+false
+---
+
+if (sync_success(payload) or order_already_exists(payload))
+true
+else
+false]]></ee:set-variable>
+			</ee:variables>
+				</ee:transform>
+		<choice doc:name="Choice" doc:id="a7bbb279-f547-444c-b881-b9b7634d4af1">
+			<when expression="#[vars.update_order]" >
+				<ee:transform doc:name="set-variables-for-update-call" doc:id="dd735202-2381-4da1-a5af-ffa440fbb54a">
+					<ee:message />
+					<ee:variables>
+						<ee:set-variable variableName="sageRest" ><![CDATA[%dw 2.0
+output application/json
+var released_to_warehouse_at = now() as DateTime
+---
+{
+	
+	path: Mule::p('https.sage.sapi.soap.path'),
+	method: "PUT",
+	queryParams:{
+		
+		"recordType": Mule::p('https.sage.sapi.soap.params.recordType'),
+        "sageObjectKey": Mule::p('https.sage.sapi.soap.params.sageObjectKey'),
+	},
+	uriParams:
+	{
+		"orderid": vars.orderId,
+	},
+	body: {"SOH1_5": {"YMFSOS": 13, "YRELWHSDATM": released_to_warehouse_at}}
+	
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<try doc:name="Try" doc:id="c07327ed-40f6-4d88-9272-1713c896ef87" >
+					<flow-ref doc:name="update-sage-request" doc:id="f5586955-3c7d-4072-9cac-f037b0e65cff" name="send-sage-request-flow" />
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="94098198-c91c-4217-ba67-9aaad592f53c" >
+							<json-logger:logger doc:name="Failed to update Sage order status " doc:id="756ebb3b-609d-4d3e-a6da-2bd5393958b8" config-ref="JSON_Logger_Config" message='#["Failed to update Sage order status : " ++ vars.orderId]'/>
+						</on-error-continue>
+					</error-handler>
+				</try>
+				<ee:transform doc:name="response-from-sage-update" doc:id="36d19644-1e0b-4444-b8de-857e620d96a5" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise>
+				<json-logger:logger doc:name="error-in-sync" doc:id="afdda9f4-b14a-4b36-8efb-d05b6e5b2115" config-ref="JSON_Logger_Config" message="Error in syncing order to Barrett" tracePoint="EXCEPTION">
+					<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>

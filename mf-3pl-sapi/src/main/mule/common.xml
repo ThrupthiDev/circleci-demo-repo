@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+		<sub-flow name="common-request-component" doc:id="640ddfb8-5afc-42ba-b647-02e6d63d63d2" >
+		<json-logger:logger doc:name="Before request" doc:id="96d3eb64-4f29-4692-8b9f-d0de8e6020a3" config-ref="JSON_Logger_Config" message='#["Before request to " ++ vars.warehouse as String]' tracePoint="BEFORE_REQUEST">
+			<json-logger:content ><![CDATA[#[payload]]]></json-logger:content>
+		</json-logger:logger>
+		<until-successful doc:name="Until Successful" doc:id="5670d237-bddb-4fa4-95ea-eff389023929" maxRetries="${request.retryAttempts}" millisBetweenRetries="${request.timeBetweenRetryAttempts}">
+			<try doc:name="Try" doc:id="9b03033b-04ed-48e3-9427-5eea5c9f7ba6" >
+				<http:request method='#[vars."3plRequest".method]' doc:name="order creation post request " doc:id="560c39e9-346d-4240-a7b1-634a62b62ff5" config-ref="Barett_Request_configuration" path='#[vars."3plRequest".path]'>
+				<http:headers><![CDATA[#[vars."3plRequest".headers default {}]]]></http:headers>
+			</http:request>
+				<ee:transform doc:name="success payload" doc:id="b65724c4-2824-4b9d-9ea0-0b76ec43a0f4" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": payload
+}
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ff92b4c3-0983-4e2a-b404-7fac37907699" when='#[error.muleMessage.typedValue.details.failureDetails[0].code[0] as String default "" contains "ORDERID_ALREADY_EXISTS"]'>
+						<ee:transform doc:name="error message" doc:id="f5b83e64-42ee-4474-a03e-e0d040368d76" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": error.muleMessage.typedValue
+}
+]]></ee:set-payload>
+							</ee:message>
+							<ee:variables >
+								<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/java
+---
+400]]></ee:set-variable>
+							</ee:variables>
+						</ee:transform>
+					</on-error-continue>
+				</error-handler>
+			</try>
+
+		</until-successful>
+		<choice doc:name="Choice" doc:id="a66340f7-7ec6-46bf-addd-e6376b863220" >
+			<when expression='#[(payload.message.details.failureDetails[0].code[0] contains "ORDERID_ALREADY_EXISTS")]'>
+				<set-variable value="200" doc:name="httpStatus" doc:id="b839c60d-9d51-422d-a346-36b12fea5fcf" variableName="httpStatus"/>
+				<json-logger:logger doc:name="order already exists" doc:id="70c21d7d-861b-43f7-87df-7795105b814f" config-ref="JSON_Logger_Config" message="order already exists" tracePoint="AFTER_REQUEST" >
+					<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</when>
+			<otherwise >
+				<json-logger:logger doc:name="order creation completed" doc:id="3a5aa163-38c6-4b8c-93ba-377ab071a8f9" config-ref="JSON_Logger_Config" message='#["order creation completed to " ++ vars.warehouse as String]' tracePoint="AFTER_REQUEST" >
+					<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	</mule>

@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	
+	
+	
+	<sub-flow name="post-each-order-to-barrett" doc:id="1ef44a37-c3bd-42bb-99c0-7067d7a3799f" >
+		<json-logger:logger doc:name="Before-sage-barrett-transform" doc:id="9248bbb4-66f5-4e6e-b67e-a1777b7c38b7" config-ref="JSON_Logger_Config" message='#["before-sage-barrett-transform"]' tracePoint="BEFORE_TRANSFORM" priority="DEBUG">
+						<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload 
+}]]]></json-logger:content>
+					</json-logger:logger>
+					<ee:transform doc:name="sage-to-barrett-format" doc:id="9126bdfe-3f81-4de7-8d13-f4a4d15cf6e9">
+						<ee:message>
+				<ee:set-payload resource="dwl/transform_sage_to_barrett.dwl" />
+						
+</ee:message>
+					</ee:transform>
+					<json-logger:logger doc:name="After-sage-to-barrett-transform-debug" doc:id="d8995644-6266-4b48-ab5a-b16d7bedd574" config-ref="JSON_Logger_Config" message='#["After sage to barrett transform"]' tracePoint="AFTER_TRANSFORM" priority="DEBUG">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: [payload]
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<json-logger:logger doc:name="After-sage-to-barrett-transform." doc:id="b0ea2be3-ccd0-4d3a-8b35-d55dee906d65" config-ref="JSON_Logger_Config" message='#["After sage to barrett transform"]' tracePoint="AFTER_TRANSFORM">
+						<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: []
+}]]]></json-logger:content>
+					</json-logger:logger>
+					<ee:transform doc:name="set-variables-barret-sapi-call" doc:id="0caa378f-855c-47ec-8e09-4d9fded82709">
+						<ee:message>
+						</ee:message>
+						<ee:variables>
+							<ee:set-variable variableName="barrett"><![CDATA[%dw 2.0
+output application/json
+---
+{
+	
+	path: Mule::p('https.3pl.sapi.path'),
+	method: "POST",
+	queryParams:{
+		"path": Mule::p('https.3pl.sapi.params.barrett.path'),
+		"warehouse": "Barrett"
+		
+	}
+	
+}]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="send-3pl-request-flow" doc:id="6a4332e9-ee64-4606-8e98-1144f6bcf283" name="send-3pl-request-flow" />
+					<flow-ref doc:name="update-sage-flow" doc:id="382da306-8c91-40e1-b1c0-bab43c4e434f" name="update-sage-flow" />
+	</sub-flow>
+	<sub-flow name="order-sync-flow" doc:id="fd0e2a5a-a774-4416-969d-0a7434f43495" >
+		<ee:transform doc:name="set-common-variables" doc:id="9919b41e-5ee8-4589-8937-12cb2ce0f15d">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="correlationId"><![CDATA[%dw 2.0
+output application/java
+---
+correlationId ]]></ee:set-variable>
+				<ee:set-variable variableName="x-transaction-id"><![CDATA[%dw 2.0
+output application/json
+---
+correlationId default null]]></ee:set-variable>
+				<ee:set-variable variableName="processName" ><![CDATA[%dw 2.0
+output application/java
+---
+"Barrett"]]></ee:set-variable>
+			
+</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="sage-rest-sapi-request-variables" doc:id="39f4dfb2-6000-41c2-99b0-75ae2dcd6bf3">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="sageRest" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	
+	path: Mule::p('https.sage.sapi.rest.path'),
+	method: "GET",
+		queryParams:{
+		 "criteria": Mule::p('https.sage.sapi.rest.params.barrett.criteria'),
+          "count": Mule::p('https.sage.sapi.rest.params.barrett.count'),
+          "representation": Mule::p('https.sage.sapi.rest.params.barrett.representation') 
+        
+	}
+	
+}]]></ee:set-variable>
+			
+</ee:variables>
+		</ee:transform>
+				<flow-ref doc:name="sage-sapi-call-for-all-orders" doc:id="4f9ced5f-0b55-48f1-b59c-7c49c70a957c" name="send-sage-request-flow" />
+		<ee:transform doc:name="extract-orderId-from-order-list" doc:id="bee24ce2-764c-44a1-80e1-afef4bd110b5">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+
+payload."\$resources".SOHNUM
+]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="geoComponent" ><![CDATA[%dw 2.0
+output application/csv
+---
+//readUrl("classpath://geocomponents/dev-geocomponents.csv","application/csv")
+(readUrl(Mule::p('geoComponent.path'),"application/csv")) ]]></ee:set-variable>
+			
+</ee:variables>
+		</ee:transform>
+		<choice doc:name="empty-order-list" doc:id="149a9781-2cf7-48f8-a2e0-3ffb590e7fca" >
+			<when expression="#[isEmpty(payload)]">
+				<ee:transform doc:name="no-orders-fetched" doc:id="dfe00874-0adf-47dc-b0a0-48cfcc152b8a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message": "Issue fetching Sage Orders for Barrett : No orders to post to barrett currently"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<flow-ref doc:name="process-each-order-flow" doc:id="7894c7c6-66f2-454d-bad8-f87ebe32c03e" name="process-each-order-flow" />
+				<ee:transform doc:name="sync-complete" doc:id="2c42139f-6bb2-468c-91ea-76466de959c4" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"Finished syncing Sage Orders to Barrett",
+	"orders": payload
+}
+
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="process-each-order-flow" doc:id="e123fe83-83ec-4f24-93a3-9b9e6ec2f052" >
+		<foreach doc:name="For Each" doc:id="14debbbe-1a85-4b64-b26b-494174cedcdd" collection="#[payload]">
+<try doc:name="Try" doc:id="c3ab356b-2677-404e-a6d5-bc2904036111" >
+				<set-variable value="#[payload]" doc:name="set-order-id" doc:id="65dcbfc7-235f-4fca-9e35-c8312d0254a1" variableName="orderId" />
+							<ee:transform doc:name="set-variables-sage-soap-sapi-call" doc:id="b0836d5d-ae67-4c06-adb2-44e0ce557b2c">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="sageRest"><![CDATA[%dw 2.0
+output application/json
+---
+{
+	
+	path: Mule::p('https.sage.sapi.soap.path'),
+	method: "GET",
+	queryParams:{
+				
+		"recordType": Mule::p('https.sage.sapi.soap.params.recordType'),
+        "sageObjectKey": Mule::p('https.sage.sapi.soap.params.sageObjectKey'),
+	},
+	uriParams:
+	{
+		"orderId": payload,
+	}
+	
+}]]></ee:set-variable>
+				
+</ee:variables>
+			</ee:transform>
+								<flow-ref doc:name="sage-sapi-call-for-single-order" doc:id="4dbbbd95-871a-47b0-b4ce-357ad303975d" name="send-sage-request-flow" />
+				<choice doc:name="order-exists" doc:id="1e43b03c-427d-4902-8573-878579714a0f" >
+					<when expression="#[isEmpty(payload.Envelope.Body.readResponse.readReturn.resultXml)]">
+						<json-logger:logger doc:name="LOG-INFO" doc:id="1aeb1888-20eb-4f92-8ef5-09c69a6b2746" config-ref="JSON_Logger_Config" message='#["Order does not exist " ++ vars.orderId]'>
+							<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload.Envelope.Body.readResponse.readReturn.messages.message
+    
+    }]]]></json-logger:content>
+						</json-logger:logger>
+					</when>
+					<otherwise >
+						<flow-ref doc:name="order-exists-flow" doc:id="38f307f7-d281-44c0-8a61-6c4ba0eb0143" name="order-exists-flow"/>
+					</otherwise>
+				</choice>
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="689c850e-d411-4464-9efe-9aab8c59a20a" >
+						<ee:transform doc:name="setErrorData" doc:id="4e6acbcf-713b-4055-ab7d-aa40cc8305b2" >
+							<ee:message />
+							<ee:variables >
+								<ee:set-variable variableName="errorData" ><![CDATA[output application/json skipNullOn="everywhere"
+
+---
+{
+	
+	"error": {
+		"correlationId": vars.correlationId,
+		"type": error.errorType.asString,
+		"message":  error.description ,
+		"service": Mule::p('app.name')
+	}
+}
+]]></ee:set-variable>
+							</ee:variables>
+						</ee:transform>
+						<json-logger:logger doc:name="Logger" doc:id="d8787399-2855-47b4-b537-d2ddc4dac783" config-ref="JSON_Logger_Config" message='#["Issue syncing Sage order to Barrett. Order: " ++ vars.orderId]' >
+							<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: vars.errorData 
+}]]]></json-logger:content>
+						</json-logger:logger>
+						<flow-ref doc:name="jira-ticket-flow" doc:id="a145c0d3-d8ec-45bd-8b03-88e08510573a" name="jira-ticket-flow"/>
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</foreach>
+	</sub-flow>
+	<sub-flow name="order-exists-flow" doc:id="35282eb6-f2bb-4f33-b297-8127fe97f438" >
+		<ee:transform doc:name="convert-order-xml-json" doc:id="4e6f0e3c-c2e2-4b60-a560-93f426d5bae3">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+read(payload.Envelope.Body.readResponse.readReturn.resultXml, "application/json")]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+						<ee:transform doc:name="barret-sync-check" doc:id="60d9be3c-9c37-4fff-9864-6d016dda5cb6">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="syncCheck"><![CDATA[%dw 2.0
+output application/json
+var barret_sync_check_err = ""
+var barret_sync_check_flg = false
+fun barret_sync_check(payload) =
+    
+    if (
+        payload["SOH2_1"]["STOFCY"] == "BE"
+        and payload["SOH1_5"]["YMFSOS"] == "4"
+        and payload["SOH2_1"]["YRSDP"] == "1"
+        and payload["SOH1_5"]["ALLSTA"] == "3"
+    )
+     [ true,"Success"]
+    else
+        if (payload["SOH2_1"]["STOFCY"] != "BE")
+            [false,"Shipment Site STOFCY value has to be BE"]
+        else if (payload["SOH1_5"]["YMFSOS"] != "4")
+           [false, "Order stage YMFSOS should be equal to 4"]
+        else if (payload["SOH2_1"]["YRSDP"] != "1")
+            [false,"Non Standard Order YRSDP should be equal to 1"]
+        else if (payload["SOH1_5"]["ALLSTA"] != "3")
+            [false,"Allocation ALLSTA should be equal to 3"]
+        else
+        [barret_sync_check_flg, barret_sync_check_err]
+---
+ barret_sync_check(payload)]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+						<choice doc:name="barret-sync-check" doc:id="d7f2a4e1-f337-450a-803b-fbea5b73e1b1">
+			<when expression="#[vars.syncCheck[0]]">
+				<flow-ref doc:name="post-each-order-to-barrett" doc:id="7ddbc0ec-24c9-43de-a594-bb8615ea0af5" name="post-each-order-to-barrett" />
+				
+</when>
+			<otherwise>
+				<json-logger:logger doc:name="error-sync-check" doc:id="d0c14f64-34ed-4ade-8ee3-f56c962b7884" config-ref="JSON_Logger_Config" message='#["Error in barrett sync check for " ++ vars.orderId]' tracePoint="EXCEPTION">
+						<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: vars.syncCheck[1]
+}]]]></json-logger:content>
+					</json-logger:logger>
+
+				</otherwise>
+			
+</choice>
+	</sub-flow>
+</mule>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<configuration-properties doc:name="Commons Configuration properties" doc:id="fb9f267c-fa6b-4744-b606-c2a49c567ff4" file="commons-${mule.env}.yaml" />
+	<json-logger:config name="JSON_Logger_Config" doc:name="Common JSON Logger Config" doc:id="c643ae2a-edd9-48e3-8536-12fab734c258" applicationName="${app.name}" applicationVersion="${app.version}" environment="${mule.env}"/>
+	<configuration doc:name="Configuration" doc:id="a8f1cc3c-f4c9-4849-830a-9c38833b198a" defaultErrorHandler-ref="global-error-handler" />
+</mule>

@@ -1,0 +1,41 @@
+{
+        "UPS": {
+            "United States of America": "GRND",
+            "Canada": {
+                "12": "CNST", 
+                "default": "WWE" 
+            },
+            "International": "WWX"
+        },
+        "UPSSCS": {
+            "United States of America": "GRND",
+            "Canada": {
+                "12": "CNST", 
+                "default": "WWE" 
+            },
+            "International": "WWX"
+        },
+        "DHL": {"United States of America": "GND", "International": "INTL"},
+        "DHLEXPRESS": {"United States of America": "GND", "International": "INTL"},
+        "CHROBINSON": {
+            "United States of America": null, 
+            "Canada": null,  
+            "Mexico": null, 
+            "International": "AIRF"
+        },
+        "OTHER": {"United States of America": "C001", "International": "C001"},
+        "FEDEX": {
+            "United States of America": {
+                "12": "GRND",  
+                "29": "EXSA",  
+                "30": "2DAY",  
+                "31": "PROV", 
+                "default": "GRND"
+            },
+            "International": {
+                "28": "INT2",  
+                "32": "INT1",  
+                "default": "INT2"
+            }
+        }
+    }

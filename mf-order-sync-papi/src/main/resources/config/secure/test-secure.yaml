@@ -1,0 +1,19 @@
+https:
+  sage:
+    sapi:
+      client_id: "![60CynDNQNy9YfvBH3x4DXOCDuIqMRv9Di40mNE5bCcF7TEOYIldokA==]"
+      client_secret: "![Im16eiL3fm4tEs17IekW/J9PiagmQFoY/co2kGC4N7xxtp1RZHmLhA==]"
+
+  3pl:
+    sapi:
+     client_id: "![60CynDNQNy9YfvBH3x4DXOCDuIqMRv9Di40mNE5bCcF7TEOYIldokA==]"
+     client_secret: "![Im16eiL3fm4tEs17IekW/J9PiagmQFoY/co2kGC4N7xxtp1RZHmLhA==]" 
+  keyPass: "![93NDkOSkI1Y57tNDWLY9lw==]"     
+     
+jira:
+  token: "![3yrJFVwGmOcZHkxn2gGzPvxGTDLNDPXI0jkT+QZYCv4brhvXyI88X9qHL6SkQDbScD8w2IaDOnMonL5CRNybEkTq1K8z94QnWQS+3h5auxZNnPwPsVpi7DKmC7DneoBxSzLJ7rXqhTOv2wJB2Fr3j++3nxwno4Ut/bY4KqAef0MDVRxEQ6w8skqAqpFyUb6EnrzwxWh8yeSSZRTD9DR5EkeMDWCSKmLNmNCauPwl2ljWyLJzFB8D47E15GKbc37Slft2q7Ftq/Q=]"
+
+             
+  
+
+        

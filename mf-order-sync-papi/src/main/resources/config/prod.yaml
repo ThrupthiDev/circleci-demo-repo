@@ -1,0 +1,57 @@
+app:
+  name: "mf-order-sync-papi"
+  version: "1.0.0"
+  id: "18581923"
+  
+https:
+  sage:
+    sapi:
+      host: "mf-sage-sapi.us-e1.cloudhub.io"
+      port: ""
+      soap:
+        path: "/api/orders/{orderId}"
+        params:
+          recordType: "ZSORDER"
+          sageObjectKey: "SOHNUM"
+      rest:
+        path: "/api/orders"
+        params:
+          barrett:
+            criteria: "STOFCY eq 'BE' and YMFSOS eq 4 and YRSDP eq 1 and ALLSTA eq 3"
+            count: "10"
+            representation: "SORDER.$query" 
+          tigers:
+            criteria: "STOFCY eq 'EU' and YMFSOS eq 4 and YRSDP eq 1 and ALLSTA eq 3"
+            count: "500"
+            representation: "SORDER.$query" 
+            
+        
+  3pl:
+    sapi:
+      client_id: "646155ed31314bc888e19aed55f9c0da"
+      host: "mf-3pl-sapi.us-e1.cloudhub.io"
+      port: ""
+      path: "/api/orders"
+      params:
+        path: "orders"    
+        
+  manual:
+    host: "0.0.0.0"
+    port: "8082"
+  
+scheduler:
+  barrett:
+    frequency: "0 0/30 0 1/1 * ? *"
+    timeZone: "PST"     
+  tigers:
+    frequency: "0 0/30 0 1/1 * ? *"
+    timeZone: "PST"
+  
+  
+geoComponent:
+  path: "classpath://geocomponents/dev-geocomponents.csv"  
+  
+  
+jira:
+  url: "https://mysite9711.atlassian.net"
+  user: "devthrupthi1997@gmail.com"    

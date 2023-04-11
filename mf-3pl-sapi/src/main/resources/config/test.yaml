@@ -1,0 +1,26 @@
+
+application:
+  name: "mf-3pl-sapi"
+  
+api:
+  version: "1.0.1"
+
+https:
+ host: "0.0.0.0"
+ port: "8082"
+
+barrett:
+ http:
+    request:
+      basePath: "v1"
+      host: "uat.api.barrettdistribution.io"
+      path: "/orders/"
+ 
+app:
+  name: "${project.artifactId}"
+  version: "1.0.1"
+  id: "18513579"
+  
+request:
+  retryAttempts: "3"
+  timeBetweenRetryAttempts: "30000"

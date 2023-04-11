@@ -1,0 +1,19 @@
+#%RAML 1.0 Library
+usage: Reusable Types
+
+types:
+  ExceptionType:
+    type: object
+    properties:
+      code:
+        displayName: Status Code
+        type: number
+        required: false
+      status:
+        displayName: Status
+        type: string
+        required: false
+      message:
+        displayName: Status Message
+        type: string
+        required: false

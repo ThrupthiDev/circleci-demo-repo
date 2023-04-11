@@ -1,0 +1,26 @@
+#%RAML 1.0
+title: mf-3pl-sapi
+protocols: [HTTP,HTTPS]
+
+uses:
+  commonTraits: /exchange_modules/757b8a93-8cd7-4039-9d0b-b9982790e3f4/mf-common-library/1.0.5/mf-common-library.raml
+
+/orders:
+  post:
+    is: [commonTraits.clientCredsRequired,commonTraits.transactionIdRequired,commonTraits.apiResponsesTrait]
+    displayName: Create an order
+    description: Create an order
+    queryParameters:
+      path:
+        description: Target location
+        type: string
+        required: true
+        example: orders/
+    body:
+      application/json:
+        description: Payload to be passed
+    responses:
+      201:
+        body:
+          application/json:
+            

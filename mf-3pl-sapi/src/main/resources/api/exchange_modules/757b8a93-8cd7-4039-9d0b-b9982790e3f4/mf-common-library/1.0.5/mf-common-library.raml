@@ -1,0 +1,112 @@
+#%RAML 1.0 Library
+usage: This is to define reusable traits.
+
+uses:
+  types: mf-common-types.raml
+  
+traits:
+  clientCredsRequired:
+    displayName: Enforce client id through HTTP headers trait  
+    headers:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+
+  transactionIdOptional:
+      headers:
+        x-transaction-id:
+          type: string
+          required: false
+
+  transactionIdRequired:
+      headers:
+        x-transaction-id:
+          type: string
+          required: true
+
+  apiResponsesTrait:
+    displayName: Trait to expose most common error responses
+    responses:
+      200:
+        description: Success
+      400:
+        description: Bad request
+        body:
+          application/json:
+            type: types.ExceptionType
+            example:
+              status: FAILURE
+              message: Invalid request.
+      401:
+        description: Unauthorized
+        body:
+          application/json:
+            type: types.ExceptionType
+            example:
+              status: FAILURE
+              message: Unauthorized access attempted.
+      403:
+        description: Forbidden
+        body:
+          application/json:
+            type: types.ExceptionType
+            example:
+              status: Forbidden
+              message: Insufficient privileges provided.
+      404:
+        description: Not Found
+        body:
+          application/json:
+            type: types.ExceptionType
+            example:
+              status: FAILURE
+              message: Resource not found"]
+      405:
+        description: Method Not Allowed
+        body:
+          application/json:
+            type: types.ExceptionType
+            example:
+              status: Unsupported Method
+              message: HTTP Method not supported by resource.
+      415:
+        description: Unsupported Media Type
+        body:
+          application/json:
+            type: types.ExceptionType
+            example:
+              status: Unsupported Media Type
+              message: Media Type not supported for this request.
+      422:
+        description: Unprocessable Entity
+        body:
+          application/json:
+            type: types.ExceptionType
+            example:
+              status: Unprocessable Entity
+              message: Could not complete the processing.
+      500:
+        description: Internal Server Error
+        body:
+          application/json:
+            type: types.ExceptionType
+            example:
+              status: Internal Server Error
+              message: Oops, something went wrong.
+      503:
+        description: Service Unavailable
+        body:
+          application/json:
+            type: types.ExceptionType
+            example:
+              status: Service Unavailable
+              message: Service can't be reached.
+      504:
+        description: Gateway Timeout
+        body:
+          application/json:
+            type: types.ExceptionType
+            example:
+              status: Gateway Timeout
+              message: Service can't complete request in resonable timeframe.

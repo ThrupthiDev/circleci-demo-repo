@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<sub-flow name="info-log-transformer" doc:id="426386e9-2810-47d5-b228-1016c1778fcc" >
+		<ee:transform doc:name="Logging Info" doc:id="e6e9712b-a297-456c-8446-3d4381bf464f" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="infologger" ><![CDATA[%dw 2.0
+output application/json  skipNullOn="everywhere"
+---
+{
+	"Timestamp": now(),
+	"EventType": "INFO",
+	("TransactionId": vars.transactionId) if !isEmpty(vars.transactionId),
+	"APIName": vars.name,
+	"Environment": p('mule.env'),
+	"Payload": vars."payload"
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<json-logger:logger doc:name="Logger" doc:id="5bfc445b-4b11-44ae-b4c5-8ac28c345b22" config-ref="JSON_Logger_Config" message='#["Informational Logging"]' tracePoint="FLOW">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: vars.infologger 
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</sub-flow>
+	<sub-flow name="error-log-transformer" doc:id="9c401951-df86-4dfc-8480-b6d35da1d367" >
+		<ee:transform doc:name="Logging Info" doc:id="4753d36f-38aa-425d-a521-138eabff50d3" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="errorlogger" ><![CDATA[%dw 2.0
+output application/json  skipNullOn="everywhere"
+---
+{
+		"Timestamp": now(),
+		"EventType": "ERROR",
+		("TransactionId": vars.transactionId) if !isEmpty(vars.transactionId),
+		"APIName": vars.name,
+		"Environment": p('mule.env'),
+		"ErrorCode":  vars.httpStatus,
+		"Type": error.errorType.asString,
+		"ErrorDetails":  error.description,
+		"Payload": payload
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<json-logger:logger doc:name="Logger" doc:id="620a2983-a008-4b51-b871-fecc05756c73" config-ref="JSON_Logger_Config" message='#["Error Logging"]' tracePoint="EXCEPTION" priority="ERROR">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: vars.errorlogger
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</sub-flow>
+	
+	<sub-flow name="debug-log-transformer" doc:id="ca0d405d-c917-491c-a097-39682995a0fa" >
+		<ee:transform doc:name="Logging Info" doc:id="3802e025-ca1f-4dbf-8463-8990563c0c8e" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="debuglogger" ><![CDATA[%dw 2.0
+output application/json  skipNullOn="everywhere"
+---
+{
+	"Timestamp": now(),
+	"EventType": "DEBUG",
+	("TransactionId": vars.transactionId) if !isEmpty(vars.transactionId),
+	"APIName": vars.name,
+	"Environment": p('mule.env'),
+	"Payload": payload
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<json-logger:logger doc:name="Logger" doc:id="2724e4e5-e939-43c7-909d-b5eebcc3159f" config-ref="JSON_Logger_Config" tracePoint="FLOW" priority="DEBUG" message='#["Debug Logging"]'>
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: vars.debuglogger
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</sub-flow>
+</mule>

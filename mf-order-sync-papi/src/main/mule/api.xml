@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+    <flow name="mf-order-sync-papi-main">
+        <http:listener config-ref="Apikit_HTTP_Listener_config" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="mf-order-sync-papi-config" />
+		<error-handler ref="apikit-error-handler" />
+    </flow>
+    <flow name="get:\manualOrderSync:mf-order-sync-papi-config">
+		<flow-ref doc:name="refer to manual-orderSync-main" doc:id="db909e4a-70c3-4970-b3df-1dd17f62b2ed" name="manual-orderSync-main"/>
+		<error-handler ref="global-error-handler" />
+    </flow>
+	<flow name="barrett-orderSync-main" doc:id="e2641b56-a0bc-413a-b4ca-ea67fe0f9980" >
+		<scheduler doc:name="Scheduler" doc:id="2157273a-1097-4393-b216-7d00ba19d6e9" >
+			<scheduling-strategy >
+				<cron expression="${scheduler.barrett.frequency}" timeZone="${scheduler.barrett.timeZone}" />
+			</scheduling-strategy>
+		</scheduler>
+		<ee:transform doc:name="context variables" doc:id="2f687b83-c464-48c4-b29d-3f4a5c4a1911" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="x-transaction-id" ><![CDATA[%dw 2.0
+output application/json
+---
+correlationId]]></ee:set-variable>
+				<ee:set-variable variableName="processName" ><![CDATA[%dw 2.0
+output application/java
+---
+"barrett"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<json-logger:logger doc:name="flow-begins" doc:id="50a4c094-b8f3-462f-9bad-c0e1f8703ed1" config-ref="JSON_Logger_Config" message='#[flow.name as String ++ " Flow begins"]' >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: "flow begins for " ++ vars.processName
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<flow-ref doc:name="order-sync-flow" doc:id="661b531d-ef56-47f4-b098-d7df864d25dc" name="order-sync-flow" />
+		<json-logger:logger doc:name="end-of-order-sync-flow" doc:id="8ea70719-a302-491c-84a6-158531d34a27" config-ref="JSON_Logger_Config" message='#[flow.name as String ++ " Flow Ends"]' tracePoint="END" >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: "flow ends for " ++ vars.processName
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</flow>
+	<flow name="tigers-orderSync-main" doc:id="77d2b1d9-2c10-4452-9c49-b6613487b8e3" >
+		<scheduler doc:name="Scheduler" doc:id="7f733ff1-1987-477c-acb0-e71ea3fc8a2a" >
+			<scheduling-strategy >
+				<cron expression="${scheduler.tigers.frequency}" timeZone="${scheduler.tigers.timeZone}" />
+			</scheduling-strategy>
+		</scheduler>
+		<ee:transform doc:name="context variables" doc:id="92fa95ac-556c-4e60-9e84-a9c601803bf6" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="x-transaction-id" ><![CDATA[%dw 2.0
+output application/json
+---
+correlationId]]></ee:set-variable>
+				<ee:set-variable variableName="processName" ><![CDATA[%dw 2.0
+output application/java
+---
+"tigers"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<json-logger:logger doc:name="flow-begins" doc:id="d7606987-9e68-4167-b6e9-eeb9811f8015" config-ref="JSON_Logger_Config" message='#[flow.name as String ++ " Flow begins"]' >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<flow-ref doc:name="refer to order-sync-tigers-main" doc:id="9b8bc7ba-84d6-4a80-9918-c37048b70a86" name="order-sync-tigers-main" />
+		<json-logger:logger doc:name="end-of-order-sync-flow" doc:id="b9d9ead8-938b-415b-b250-272f5a583f9c" config-ref="JSON_Logger_Config" message='#[flow.name as String ++ " Flow Ends"]' tracePoint="END" >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload 
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</flow>
+	<sub-flow name="manual-orderSync-main" doc:id="330d6ce7-b61b-4bab-9a43-a8f2fda15cf5" >
+		<ee:transform doc:name="context variables" doc:id="26eed52c-4e13-406b-bb3a-9909218e0f41" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.orderIds default "" splitBy ","]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="warehouse" ><![CDATA[%dw 2.0
+output application/java
+---
+lower(attributes.queryParams.warehouse)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<json-logger:logger doc:name="flow-begins" doc:id="935d1bcb-c6f2-46a9-aedb-67d05aaf1973" config-ref="JSON_Logger_Config" message='#[flow.name as String ++ " Flow begins"]' >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<choice doc:name="Choice" doc:id="4fbb2b26-74f8-47e7-b8ed-d912a8bc504c" >
+			<when expression='#[(vars.warehouse == "barrett")]' >
+				<flow-ref doc:name="Flow Reference" doc:id="58987b75-28b7-4d9f-8ac6-fa0faf1d7553" name="process-each-order-flow" />
+			</when>
+			<when expression='#[(vars.warehouse == "tigers")]' >
+				<flow-ref doc:name="Flow Reference" doc:id="89b965f1-f774-4da9-b8fc-dd261548b572" name="process-order-sync-tigers" />
+			</when>
+			<otherwise >
+				<json-logger:logger doc:name="invalid warehouse" doc:id="8fd09483-108e-4bfa-a300-c460c6b3037e" config-ref="JSON_Logger_Config" message='#["invalid warehouse : $(vars.warehouse)"]' >
+					<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload 
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="0480a60e-1a80-4f0b-900e-fdcb45bb652c">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "manual order sync process done successfully",
+	"orders": payload
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+		<json-logger:logger doc:name="end-of-order-sync-flow" doc:id="cb15683e-4ef9-4197-b2c0-7eb9ef85e79f" config-ref="JSON_Logger_Config" message='#[flow.name as String ++ " Flow Ends"]' tracePoint="END" >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload 
+}]]]></json-logger:content>
+		</json-logger:logger>
+	</sub-flow>
+</mule>

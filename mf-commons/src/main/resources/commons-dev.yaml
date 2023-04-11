@@ -1,0 +1,118 @@
+app:
+  name: ${project.artifactId}
+  version: 1.0.3
+  
+# Error Types
+"error":
+  "client": "Client Error"
+  "server": "Server Error"
+  "business": "Business Error"
+  "data": "Data Error"
+  "continue": "In default handler's On Error Continue"
+  "propagate": "In default handler's On Error Propogate: "
+  
+# Client Error codes and message
+"400": "Bad Request"
+"401": "Unauthorized" 
+"404": "Not Found"
+"405": "Method Not Allowed"
+"406": "Not Acceptable"
+"415": "Unsupported Media Type"
+
+# Server Error codes and message
+"500": "Internal Server Error"
+"502": "Bad Gateway"
+"503": "Service Unavailable"
+"504": "Gateway Timeout"
+
+# Business Error codes and message
+"422": "Mule expression failed"
+"520": "Internal unhandled server error"
+
+#APIKIT errors
+'APIKIT:BAD_REQUEST': "400"
+'APIKIT:NOT_FOUND': "404"
+'APIKIT:METHOD_NOT_ALLOWED': "405"
+'APIKIT:NOT_ACCEPTABLE': "406"
+'APIKIT:UNSUPPORTED_MEDIA_TYPE': "415"
+'APIKIT:NOT_IMPLEMENTED': "501"
+
+#SFTP errors
+'SFTP:FILE_LOCK': "423"
+'SFTP:CONNECTIVITY' : "503"
+'SFTP:RETRY_EXHAUSTED': "503"
+'SFTP:ILLEGAL_PATH': "424"
+'SFTP:FILE_ALREADY_EXISTS': "403"
+'SFTP:ACCESS_DENIED': "401"
+'SFTP:ILLEGAL_CONTENT': "400"
+
+#Database errors
+'DB:CONNECTIVITY': "503"
+'DB:RETRY_EXHAUSTED': "503"
+'DB:BAD_SQL_SYNTAX': "400"
+'DB:QUERY_EXECUTION': "400"
+
+#Web service consumer errors
+'WSC:SOAP_FAULT': "500"
+'WSC:TIMEOUT': "504"
+'WSC:RETRY_EXHAUSTED': "503"
+'WSC:CONNECTIVITY': "503"
+'WSC:CANNOT_DISPATCH': "500"
+'WSC:BAD_REQUEST': "400"
+'WSC:INVALID_WSDL': "424"
+
+#File
+'FILE:ILLEGAL_PATH': "424"
+'FILE:FILE_LOCK': "423"
+'FILE:FILE_ALREADY_EXISTS': "403"
+'FILE:CONNECTIVITY': "503"
+'FILE:RETRY_EXHAUSTED': "503"
+'FILE:ACCESS_DENIED': "401"
+'FILE:ILLEGAL_CONTENT': "400"
+
+#Object store
+'OS:STORE_NOT_AVAILABLE': "404"
+'OS:KEY_NOT_FOUND': "404"
+'OS:NULL_VALUE': "400"
+'OS:INVALID_KEY': "424"
+'OS:KEY_ALREADY_EXISTS': "403"
+
+#Compression error
+'COMPRESSION:COULD_NOT_DECOMPRESS': "400"
+'COMPRESSION:INVALID_ARCHIVE': "400"
+'COMPRESSION:TOO_MANY_ENTRIES': "400"
+
+#Schema valiation error
+'JSON:SCHEMA_NOT_FOUND': "404"
+'JSON:INVALID_SCHEMA': "404"
+'JSON:SCHEMA_NOT_HONOURED': "400"
+'JSON:INVALID_INPUT_JSON': "400"
+
+#HTTP errors
+'HTTP:BAD_REQUEST': "400"
+'HTTP:CLIENT_SECURITY': "401"
+'HTTP:SECURITY': "401"
+'HTTP:UNAUTHORIZED': "401"
+'HTTP:FORBIDDEN': "401"
+'HTTP:NOT_FOUND': "404"
+'HTTP:CONNECTIVITY': "503"
+'HTTP:RETRY_EXHAUSTED': "503"
+'HTTP:SERVICE_UNAVAILABLE': "503"
+'HTTP:INTERNAL_SERVER_ERROR': "500"
+'HTTP:BAD_GATEWAY': "502"
+
+#Anypoint MQ errors
+'ANYPOINT-MQ:CONNECTIVITY':  "503"
+'ANYPOINT-MQ:RETRY_EXHAUSTED':  "503"
+'ANYPOINT-MQ:PUBLISHING':  "500"
+'ANYPOINT-MQ:DESTINATION_NOT_FOUND': "404"
+'ANYPOINT-MQ:ILLEGAL_BODY': "400"
+
+#Mule Errors and others
+'MULE:EXPRESSION': "422"
+'MULE:RETRY_EXHAUSTED': "503"
+'MULE:UNKNOWN': "520"
+'MULE:COMPOSITE_ROUTING': "500"
+
+#Custom error
+'ERROR:CIFS': "500"

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:jira="http://www.mulesoft.org/schema/mule/jira"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/jira http://www.mulesoft.org/schema/mule/jira/current/mule-jira.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+	<import doc:name="Import" doc:id="2e38c257-6342-4adb-9498-a160966e2b03" file="commons-error-handler.xml" />
+	<http:request-config name="3pl_Request_configuration" doc:name="HTTP Request configuration" doc:id="5583b8e6-5432-4bed-a763-1b503b31e1f0" >
+		<http:request-connection protocol="HTTPS" host="#[Mule::p('https.3pl.sapi.host')]"/>
+		<http:default-headers >
+			<http:default-header key="client_id" value="#[Mule::p('secure::https.3pl.sapi.client_id')]" />
+			<http:default-header key="client_secret" value="#[Mule::p('secure::https.3pl.sapi.client_secret')]" />
+			<http:default-header key="x-transaction-id" value="#[vars.correlationId]" />
+		</http:default-headers>
+	
+</http:request-config>
+	<http:listener-config name="Apikit_HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="0e185fc0-d9a0-4551-95cb-7f1fce39fa3e" >
+		<http:listener-connection host="${https.manual.host}" port="${https.manual.port}" protocol="HTTPS">
+			<tls:context >
+				<tls:key-store type="jks" path="server-keystore.jks" keyPassword="${secure::https.keyPass}" password="${secure::https.keyPass}"/>
+			</tls:context>
+		</http:listener-connection>
+	</http:listener-config>
+	<apikit:config name="mf-order-sync-papi-config" api="resource::757b8a93-8cd7-4039-9d0b-b9982790e3f4:mf-order-sync-papi:1.0.1:raml:zip:mf-order-sync-papi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    
+	<http:request-config name="Sage_Request_configuration" doc:name="HTTP Request configuration" doc:id="2a041b21-d5e1-4b2e-bb09-9795fa587d26">
+		<http:request-connection host="#[Mule::p('https.sage.sapi.host')]" protocol="HTTPS"/>
+		<http:default-headers >
+			<http:default-header key='client_id' value="#[Mule::p('secure::https.sage.sapi.client_id')]" />
+			<http:default-header key='client_secret' value="#[Mule::p('secure::https.sage.sapi.client_secret')]" />
+			<http:default-header key='x-transaction-id' value='#[vars.correlationId]' />
+		</http:default-headers>
+	
+</http:request-config>
+	
+	<configuration-properties doc:name="Configuration properties" doc:id="95c715d8-655f-42fa-95c7-ed32cd9df180" file="config/${mule.env}.yaml" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="09906c6b-5a10-4aa8-875b-31b9fb7fa6b3" file="config/secure/${mule.env}-secure.yaml" key="${mule.key}" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<import doc:name="Import" doc:id="a2e105b1-e703-4aec-9648-54fbae9b8341" file="commons-config.xml" />
+	<import doc:name="Import" doc:id="c049bc3f-1b32-4299-b8c2-1a7dee95bc46" file="commons-logger.xml" />
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="5798c674-9457-4b0a-b2c3-f816100ee89b" basePath="/rest/api/3">
+		<http:request-connection protocol="HTTPS" host="mysite9711.atlassian.net" >
+			<http:authentication >
+				<http:basic-authentication username="devthrupthi1997@gmail.com" password="ATATT3xFfGF0PJmehZg14ecwFOLux0KJ6-PeN0iJ9bjrOUKPc9OQpIDv34skkOATLyUvvNTaFCoDS88nvozCL747zA15oXe4tcxP6yDUGocJoRhrq2akdC6cY61tF-jvAPLvzvbGgxhJ6h6L8gFWU8-Blz4AP1eE6IYJqeeO9MTQ75eZu5mQjrM=39BF67A0" />
+			</http:authentication>
+		</http:request-connection>
+	</http:request-config>
+	<api-gateway:autodiscovery apiId="${app.id}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="5338a034-cc54-4fba-a7fb-f9d09b035a9d" flowRef="mf-order-sync-papi-main" />
+
+</mule>

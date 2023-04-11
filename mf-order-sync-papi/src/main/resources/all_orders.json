@@ -1,0 +1,102 @@
+{
+    "$itemsPerPage": 10,
+    "$resources": [
+        {
+            "$uuid": "78a0bb2f-eb31-d34d-aee2-8f991bcbf81b",
+            "$etag": "2023-01-20T17:41:41Z",
+            "SOHCAT": 1,
+            "SOHNUM": "MF-089654-1",
+            "ORDDAT": "2022-11-29",
+            "CUSORDREF": "322421",
+            "YMFSOS": 4,
+            "YMFSOSP": 4,
+            "YMFON": "8015d000003gmDNAAY",
+            "ORDSTA": 1,
+            "DLVSTA": 1,
+            "SOHTYP": "SON",
+            "SOHTYP_REF": {
+                "$title": "Normal",
+                "$description": "Normal order"
+            },
+            "SOHTYP_LEG": "",
+            "SOHTYP_LEG_REF": {
+                "$title": ""
+            },
+            "BPCORD": "VAR000077",
+            "BPCORD_REF": {
+                "$title": "",
+                "$description": "Emona Instruments"
+            },
+            "SALFCY": "US",
+            "SALFCY_REF": {
+                "$title": "Markforged",
+                "$description": "Markforged, Inc."
+            },
+            "RREP1": "",
+            "RREP1_REF": {
+                "$title": ""
+            },
+            "RBPCPOSCOD": "2050",
+            "RBPCPOSCOD_REF": {
+                "$title": ""
+            },
+            "RBPCCRY": "AU",
+            "RBPCCRY_REF": {
+                "$title": "Australia",
+                "$description": "Australia"
+            }
+        },
+        {
+            "$uuid": "46d05cdd-3e19-dd44-847d-116f1f87917d",
+            "$etag": "2023-01-20T17:39:02Z",
+            "SOHCAT": 1,
+            "SOHNUM": "MF-092107",
+            "ORDDAT": "2022-12-22",
+            "CUSORDREF": "",
+            "YMFSOS": 4,
+            "YMFSOSP": 17,
+            "YMFON": "8015d000003gqVBAAY",
+            "ORDSTA": 1,
+            "DLVSTA": 1,
+            "SOHTYP": "SON",
+            "SOHTYP_REF": {
+                "$title": "Normal",
+                "$description": "Normal order"
+            },
+            "SOHTYP_LEG": "",
+            "SOHTYP_LEG_REF": {
+                "$title": ""
+            },
+            "BPCORD": "WEB000001",
+            "BPCORD_REF": {
+                "$title": "",
+                "$description": "Markforged Direct Sales"
+            },
+            "SALFCY": "US",
+            "SALFCY_REF": {
+                "$title": "Markforged",
+                "$description": "Markforged, Inc."
+            },
+            "RREP1": "",
+            "RREP1_REF": {
+                "$title": ""
+            },
+            "RBPCPOSCOD": "02472-4251",
+            "RBPCPOSCOD_REF": {
+                "$title": ""
+            },
+            "RBPCCRY": "US",
+            "RBPCCRY_REF": {
+                "$title": "United States of America",
+                "$description": "United States of America"
+            }
+        }
+    ],
+    "$links": {
+        "$last": {
+            "$url": "https://sage.markforged.com/mobile1/x3/erp/PILOT/SORDER?representation=SORDER.$query&key=lt&orderBy=SOHNUM&where=STOFCY%20eq%20%27BE%27%20and%20YMFSOS%20eq%204%20and%20YRSDP%20eq%201%20and%20ALLSTA%20eq%203",
+            "$type": "application/json;vnd.sage=syracuse",
+            "$method": "GET"
+        }
+    }
+}

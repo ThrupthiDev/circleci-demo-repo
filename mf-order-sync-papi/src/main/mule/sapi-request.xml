@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<sub-flow name="send-sage-request-flow" doc:id="bfc63928-57ee-4ce7-ab3e-53cf1665f715" >
+		<json-logger:logger doc:name="before-sage-call" doc:id="2fb88037-a02f-492b-b990-31737c97b6eb" config-ref="JSON_Logger_Config" message="Before sage sapi call" tracePoint="BEFORE_REQUEST">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: vars.processName
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<http:request method="#[vars.sageRest.method]" doc:name="Sage Request" doc:id="ebb732c8-f67c-4764-b14b-c04e43c2665f" path='#[vars.sageRest.path]' config-ref="Sage_Request_configuration" responseTimeout="600000">
+			<http:body ><![CDATA[#[vars.sageRest.body default {}]]]></http:body>
+			<http:headers ><![CDATA[#[vars.sageRest.headers default {}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[vars.sageRest.uriParams default {}]]]></http:uri-params>
+			<http:query-params ><![CDATA[#[vars.sageRest.queryParams default {}]]]></http:query-params>
+		</http:request>
+		<json-logger:logger doc:name="after-sage-call" doc:id="5c07b3c1-014c-4f90-b03b-7fe8954114ba" config-ref="JSON_Logger_Config" message="After  sage sapi call " tracePoint="AFTER_REQUEST" priority="DEBUG">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<json-logger:logger doc:name="after-sage-call-info" doc:id="1ac64447-73fc-406e-a9f2-8deda39bdaae" config-ref="JSON_Logger_Config" message="After  sage sapi call " tracePoint="AFTER_REQUEST">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: []
+}]]]></json-logger:content>
+		</json-logger:logger>
+	
+</sub-flow>
+	<sub-flow name="send-3pl-request-flow" doc:id="29d97e89-6c23-49d8-8f32-c1efc933ce2e" >
+		<json-logger:logger doc:name="before-3pl-post-call" doc:id="e68bf020-1fa4-4880-8259-19470825f09f" config-ref="JSON_Logger_Config" message='#["Before  Post Call in " ++ vars.processName]' tracePoint="BEFORE_REQUEST">
+			<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: "Before 3pl post for " ++ vars.orderId
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<http:request method="#[vars.barrett.method]" doc:name="Barrett Request" doc:id="7c663a79-9441-4e51-85b6-aae34c647c6d" config-ref="3pl_Request_configuration" path="#[vars.barrett.path]">
+			<http:body ><![CDATA[#[[payload]]]]></http:body>
+			<http:query-params ><![CDATA[#[vars.barrett.queryParams]]]></http:query-params>
+		</http:request>
+		<json-logger:logger doc:name="after-3pl-post-call" doc:id="51fa559e-1237-4c59-8d3b-2ec0a9c5f4eb" config-ref="JSON_Logger_Config" message='#["After Post Call in " ++ vars.processName]' tracePoint="AFTER_REQUEST" priority="DEBUG">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<json-logger:logger doc:name="after-3pl-post-call-info" doc:id="745f1ef0-ce42-476c-9416-131e042bca44" config-ref="JSON_Logger_Config" message='#["After Post Call in " ++ vars.processName]' tracePoint="AFTER_REQUEST" >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: []
+}]]]></json-logger:content>
+		</json-logger:logger>
+	
+</sub-flow>
+	</mule>

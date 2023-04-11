@@ -1,0 +1,9 @@
+{
+        "CHROBINSON": "CHR",
+        "DHL": "DHL",
+        "DHLEXPRESS": "DHL",
+        "FEDEX": "FEDX",
+        "OTHER": "BW01",
+        "UPS": "UPS",
+        "UPSSCS": "UPS"
+    }

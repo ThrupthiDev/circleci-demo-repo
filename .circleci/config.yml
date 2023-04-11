@@ -1,0 +1,59 @@
+executors:
+  main:
+    docker:
+      - image: 'cimg/openjdk:11.0.13'
+        environment:
+          MAVEN_OPTS: -Xmx3200m   
+restorecache: &restorecache
+  restore_cache:
+    
+    key: 'mulesoft-{{ checksum "pom.xml" }}'
+    
+savecache: &savecache    
+  save_cache:
+    paths:
+      - ~/.m2
+    key: 'mulesoft-{{ checksum "pom.xml" }}'               
+
+commands:
+  cstep:
+    steps:
+      - checkout
+      - *restorecache    
+      - *savecache 
+      
+workflows:
+  version: 2
+  dev:    
+    jobs:
+      - deploy_dev:
+          filters:
+            branches:
+              only:
+                - develop
+
+version: 2.1    
+jobs:         
+    deploy_dev: 
+      executor: main
+      environment:
+        cloudhubPropertyEnv: dev
+        cloudhubWorkerType: MICRO
+        cloudhubEnvironment: DEVELOPMENT
+        logLevel: INFO
+      steps:
+        - cstep
+        - run: 
+            name: Deploy to dev
+            command: |
+              git diff --dirstat=files,0 HEAD~1 | sed 's/^[ 0-9.]\+% //g' > a.txt
+              sed "s/\/.*//" a.txt | uniq > b.txt
+              grep -we "mf-3pl-sapi" -we "mf-sage-sapi" -we "mf-order-sync-papi" b.txt | while read app              
+              do
+                echo $app
+                ls
+                cd $app
+                cloudhubApplicationName="$app" client_id=$dev_client_id client_secret=$dev_client_secret cloudhubOrgID=$dev_orgId mvn -s ../.circleci/settings.xml deploy -Dmule.env=$cloudhubPropertyEnv -Dmule.key=$dev_key -DcloudhubPropertyCryptKey=${cloudhubPropertyCryptKey} -DmuleDeploy
+                cd ..
+              done
+              

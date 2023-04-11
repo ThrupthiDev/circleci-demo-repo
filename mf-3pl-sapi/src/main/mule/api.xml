@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+       <flow name="mf-3pl-sapi-main">
+        <http:listener config-ref="mf-3pl-sapi-httpsListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="mf-3pl-sapi-config" />
+		<error-handler ref="apikit-error-handler" />
+    </flow>
+    <flow name="post:\orders:application\json:mf-3pl-sapi-config">
+		<json-logger:logger doc:name="barrett order creation flow starts" doc:id="bb03bf14-2a2c-4f8b-9ca9-87d65b1f542a" config-ref="JSON_Logger_Config" message='#["barrett order creation flow starts Flow name: " ++ flow.name as String]'>
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: []
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<ee:transform doc:name="context variables" doc:id="1fd50563-7644-4499-85b4-15dbbc5bd716">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="path"><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.path]]></ee:set-variable>
+				<ee:set-variable variableName="warehouse"><![CDATA[%dw 2.0
+output application/java
+---
+upper(attributes.queryParams.warehouse)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="refer to create-order-main" doc:id="4218e80e-9126-4bb4-8c53-8d44743934c8" name="create-order-main"/>
+		<json-logger:logger doc:name="barrett order creation flow ends" doc:id="ec4bdccd-3a20-46e2-aa0c-230d25c17788" config-ref="JSON_Logger_Config" message='#["barrett order creation flow ends Flow name: " ++ flow.name as String]' tracePoint="END">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: []
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<error-handler ref="global-error-handler" />
+    </flow>
+</mule>

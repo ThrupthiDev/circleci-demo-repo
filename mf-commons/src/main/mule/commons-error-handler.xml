@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<error-handler name="global-error-handler" doc:id="fdec3370-4d25-444c-bdca-bd9acb4b6867" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5929717c-21dc-4bfe-931e-a183ab426d30" >
+			<json-logger:logger doc:name="Start of Error Flow" doc:id="083b95b7-d4e5-4ef8-976c-97ff201440bf" config-ref="JSON_Logger_Config" message='#["Start of Error Flow. Error in flow " ++ (vars.name default "" as String)]' >
+				<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: "" 
+}]]]></json-logger:content>
+			</json-logger:logger>
+			<ee:transform doc:name="httpStatus" doc:id="478b169c-edf5-4523-a325-da8155f0ef0a" >
+				<ee:message >
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/json
+var code = error.errorType.namespace ++ ":" ++ error.errorType.identifier
+---
+Mule::p(code) default Mule::p('MULE:UNKNOWN') as Number]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<ee:transform doc:name="Error payload JSON" doc:id="61a20f82-577a-4c8d-89b0-08c6a0324864">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json skipNullOn="everywhere"
+var code = vars.httpStatus
+---
+{
+		"Timestamp": now(),
+		"EventType": "ERROR",
+		("TransactionId": vars.transactionId) if !isEmpty(vars.transactionId),
+		"APIName": vars.name,
+		"Environment": p('mule.env'),
+		"ErrorCode":  vars.httpStatus,
+		"Type": error.errorType.asString,
+		"ErrorDetails":  error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<json-logger:logger doc:name="Logging error details" doc:id="89d2a1c7-043a-4704-a27e-66b01066628e" config-ref="JSON_Logger_Config" message='#["Logging Error Details"]'>
+				<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: payload
+}]]]></json-logger:content>
+			</json-logger:logger>
+			<json-logger:logger doc:name="End of Error Flow" doc:id="a5999040-d8f0-45e4-b37c-aa884f9b3937" config-ref="JSON_Logger_Config" message='#["End of Error Flow. Error in flow " ++ (vars.name default "" as String)]' tracePoint="END">
+				<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: ""
+}]]]></json-logger:content>
+			</json-logger:logger>
+		</on-error-propagate>
+	</error-handler>
+	<error-handler name="apikit-error-handler" doc:id="eabb91d5-d126-45ed-9474-4f2c2960536d" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="82e5b252-ed7e-4aba-a0d9-d406b2997f0a" type="APIKIT:BAD_REQUEST">
+			<ee:transform doc:name="Create Error Response" doc:id="0c26fae3-6f94-4d89-909b-a4496bb5a43f" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    message: error.description default "Bad request"
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[400]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="21e6a094-4106-4e6e-bf93-e38a39ddb4cc" type="APIKIT:NOT_FOUND" >
+			<ee:transform doc:name="Create Error Response" doc:id="d1484b95-e2bf-4164-8903-0a3b1e852cd2" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    message: error.description default "Resource not found"
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[404]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5ae098d3-27e1-4da2-af38-ca0182d11591" type="APIKIT:METHOD_NOT_ALLOWED" >
+			<ee:transform doc:name="Create Error Response" doc:id="4d5f5bb3-a996-485f-90d5-46c72142a272" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    message: error.description default "Method not allowed"
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[405]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d30364a3-c216-4580-9634-6fccff981687" type="APIKIT:NOT_ACCEPTABLE" >
+			<ee:transform doc:name="Create Error Response" doc:id="10573ef1-5db4-4d32-bcb7-5da3df9351e3" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    message: error.description default "Not acceptable"
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[406]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="626563fc-cf9d-4050-9d16-dd913953955f" type="APIKIT:UNSUPPORTED_MEDIA_TYPE" >
+			<ee:transform doc:name="Create Error Response" doc:id="d9121b13-c00a-4b9d-b13f-e1cc91dd9c01" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    message: error.description default "Unsupported media type"
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[415]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ad8d89b4-cdf3-4ef4-a454-6f17e9f3ef3f" type="APIKIT:NOT_IMPLEMENTED" >
+			<ee:transform doc:name="Create Error Response" doc:id="1c3f1dc8-6fef-492b-81d0-9ef5d15ae5e1" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    message: error.description default "Not Implemented"
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="httpStatus" ><![CDATA[501]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+	</error-handler>
+</mule>

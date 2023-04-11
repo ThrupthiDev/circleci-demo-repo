@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jira="http://www.mulesoft.org/schema/mule/jira"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jira http://www.mulesoft.org/schema/mule/jira/current/mule-jira.xsd">
+	<sub-flow name="create-issue" doc:id="dee86c11-3455-48db-b53b-1e9346db8d34" >
+		<ee:transform doc:name="create-issue-payload" doc:id="b9364180-c6d7-4932-81da-e8c8634682fe">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+ {
+ "fields": {
+        "summary": vars.errorType,
+       
+        "issuetype": {
+           
+            "name": "Bug",      
+        },
+        "project": {
+            "key": "DP"
+        },
+       
+        
+        "description": {
+            "type": "doc",
+            "version": 1,
+            "content": [
+                {
+                "type": "paragraph",
+                "content": [
+                    {
+                   "text": vars.errorData.error."message",
+                    "type": "text"
+                    }
+                ]
+                }
+            ]
+        }
+    }}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="create-issue" doc:id="615c0af3-9b48-4c50-8888-ae1f8d658ca8" config-ref="HTTP_Request_configuration" path="/issue" />
+	
+</sub-flow>
+	<sub-flow name="jira-ticket-flow" doc:id="b370536e-9cbe-4d75-9106-8860d541ea34" >
+		<ee:transform doc:name="set-errorType" doc:id="eb642645-42fa-4dd3-bdd7-c63a49dc75ac" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="errorType" ><![CDATA[%dw 2.0
+output application/json
+---
+(vars.orderId ++ ":" ++ vars.errorData.error."type") as String]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="GET" doc:name="search-issue" doc:id="560d5de8-e6e1-45ea-ac16-130ca8c2e9a5" config-ref="HTTP_Request_configuration" path="/search" target="searchResult">
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	"jql" : "project=DP AND status!=Done AND summary~"++ (vars.orderId ++ ":" ++ vars.errorType)
+}]]]></http:query-params>
+		</http:request>
+		<choice doc:name="Choice" doc:id="a89fd79e-158f-4ae6-8b36-4642fe186797" >
+			<when expression='#[vars.searchResult."total" != 0]' >
+				<ee:transform doc:name="Transform Message" doc:id="846efb01-6c2f-4d8f-bcec-366b566fdc75">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": " issue exists"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			
+</when>
+			<otherwise>
+				<flow-ref doc:name="create-issue" doc:id="8cdd5bb5-3ad3-4bd1-9425-55f09c36f141" name="create-issue" />
+
+			</otherwise>
+		
+</choice>
+	
+</sub-flow> 
+	
+	
+</mule>
